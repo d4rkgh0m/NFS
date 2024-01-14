@@ -12,4 +12,4 @@ sudo cat << EOF > /etc/exports
 /srv/share 192.168.56.10/24(rw,sync,root_squash)
 EOF
 sudo exportfs -r
-sudo touch /srv/share/upload/client_file
+sudo touch /srv/share/upload/chek_file
