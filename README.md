@@ -52,6 +52,7 @@ end
   end 
 end 
 ```
+### Настраиваем сервер NFS
 ### Создаем скрипт для сервера с именем nfss_script.sh:
 ```ruby
 #!/bin/bash
@@ -68,7 +69,7 @@ sudo cat << EOF > /etc/exports
 /srv/share 192.168.56.10/24(rw,sync,root_squash)
 EOF
 sudo exportfs -r
-sudo touch /srv/share/upload/client_file
+sudo touch /srv/share/upload/chek_file
 ```
 ### В данном скрипте мы лишь доустанавливаем недостающие утилиты для отладки к уже установленному серверу NFS
 > sudo yum install nfs-utils -y
@@ -88,3 +89,49 @@ sudo touch /srv/share/upload/client_file
 > EOF
 ### экспортируем ранее созданную директорию
 > exportfs -r
+### И сразу создадим файл в директории
+> sudo touch /srv/share/upload/chek_file
+### Настраиваем клиент NFS
+### Создаем скрипт для клиента с именем nfsс_script.sh:
+```ruby
+#!/bin/bash
+
+sudo yum install nfs-utils -y
+sudo systemctl enable firewalld --now
+sudo echo "192.168.56.10:/srv/share/ /mnt nfs vers=3,proto=udp,noauto,x-systemd.automount 0 0" >> /etc/fstab
+sudo systemctl daemon-reload
+sudo systemctl restart remote-fs.target
+sudo touch /mount/upload/client_file
+```
+### В данном скрипте мы лишь доустанавливаем вспомогательные утилиты
+> sudo yum install nfs-utils -y
+### добавляем в __/etc/fstab__ строку_ для автомонтирования шары NFS
+> sudo echo "192.168.56.10:/srv/share/ /mnt nfs vers=3,proto=udp,noauto,x-systemd.automount 0 0" >> /etc/fstab
+### Для перезагрузки измененного файла выполним
+> systemctl daemon-reload
+### Для того, чтобы автоматически перемонтировать любые новые записи, выполним
+> sudo systemctl restart remote-fs.target
+### Также создадим файл в расшаренной директории
+> sudo touch /mnt/upload/client_file
+### ПО окончании отработки скриптов мы получаем полностью подготовленные сервер и клиент:
+### Для проверки работоспособности можно войти на клиент
+> vagrant up nfsc
+### Повышаем привелегии
+> sudo -i
+### переходим в директорию которая подмонтирована
+> cd /mnt/upload
+### И вводим 
+> mount | grep mnt
+### В ответе получим
+```ruby
+systemd-1 on /mnt type autofs (rw,relatime,fd=46,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=26821)
+192.168.56.10:/srv/share/ on /mnt type nfs (rw,relatime,vers=3,rsize=32768,wsize=32768,namlen=255,hard,proto=udp,timeo=11,retrans=3,sec=sys,mountaddr=192.168.56.10,mountvers=3,mountport=20048,mountproto=udp,local_lock=none,addr=192.168.56.10)
+```
+### И проверяем созданные файлы
+> ls -l
+### Вывод команды следующий
+```ruby
+-rw-r--r--. 1 root      root      0 Jan 14 21:03 chek_file
+-rw-r--r--. 1 nfsnobody nfsnobody 0 Jan 14 21:05 client_file
+```
+### Задание выполнено
